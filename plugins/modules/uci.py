@@ -5,6 +5,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -44,26 +45,21 @@ options:
     description:
       - list of uci options to add/update/remove. If your option is an uci list
       - write it simply as a list.
-    type: str
+    type: dict
   position:
     description:
       - section position. Use it to reorder the section
-    type: number
+    type: int
   find:
     description:
       - Value(s) to match sections against.
       - Option value to find if I(option) is set. May be list.
       - Dict of options/values if I(option) is not set. Values may be list.
       - Lists are compared in order.
+    type: dict
     aliases:
       - find_by
       - search
-  keep_keys:
-    description:
-      - Space seperated list or list of keys not in I(value) or I(find) to
-        keep when I(replace=yes).
-    aliases:
-      - keep
   replace:
     description:
       - whether to delete all options not mentioned in I(keep_keys), I(value) or find when
@@ -135,6 +131,8 @@ def main():
             options=dict(type="dict"),
             position=dict(type="int"),
             replace=dict(type="bool", default=False),
+            find=dict(type="dict", aliases=['find_by', 'search']),
+            set_find=dict(type="bool", default=False),
             commit=dict(type="bool", default=False),
         ),
         # mutually_exclusive = [],
