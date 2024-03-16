@@ -1,4 +1,4 @@
-name: Test Ansible collection
+name: Ansible-test
 on: [push]
 jobs:
   test:
