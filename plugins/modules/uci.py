@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2018, Benoit DE RANCOURT <benoit2r@gmail.com>
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-from ansible.module_utils.basic import AnsibleModule
+# Copyright: (c) 2024, Benoit DE RANCOURT <benoit2r@gmail.com>
+# GNU General Public License v3.0+ (see https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: uci
 
@@ -20,6 +22,8 @@ description:
 
 options:
   state:
+    description:
+      - uci config state, present or absent
     type: str
     choices: [ present, absent ]
     default: present
@@ -81,9 +85,9 @@ options:
 
 author:
     - Benoit DE RANCOURT (@bderancourt)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 # Pass in a message
 - name: Test with a message
   my_namespace.my_collection.uci:
@@ -99,9 +103,9 @@ EXAMPLES = r'''
 - name: Test failure of the module
   my_namespace.my_collection.uci:
     name: fail me
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 # These are examples of possible return values, and in general should use other names for return values.
 original_message:
     description: The original name param that was passed in.
@@ -113,68 +117,71 @@ message:
     type: str
     returned: always
     sample: 'goodbye'
-'''
+"""
 
-PRESENT = 'present'
-ABSENT = 'absent'
+from ansible.module_utils.basic import AnsibleModule
+
+PRESENT = "present"
+ABSENT = "absent"
+
 
 def main():
-  module = AnsibleModule(
+    module = AnsibleModule(
         argument_spec=dict(
-            state=dict(type='str', default=PRESENT, choices=[PRESENT, ABSENT]),
-            config=dict(type='str', required=True),
-            section=dict(type='str'),
-            type=dict(type='str'),
-            options=dict(type='dict'),
-            position=dict(type='int'),
-            replace=dict(type='bool', default=False),
-            commit=dict(type='bool', default=False),
+            state=dict(type="str", default=PRESENT, choices=[PRESENT, ABSENT]),
+            config=dict(type="str", required=True),
+            section=dict(type="str"),
+            type=dict(type="str"),
+            options=dict(type="dict"),
+            position=dict(type="int"),
+            replace=dict(type="bool", default=False),
+            commit=dict(type="bool", default=False),
         ),
         # mutually_exclusive = [],
         # required_together = [],
         # required_one_of = [],
         # required_if = [],
         # required_by = [],
-        supports_check_mode=True
-  )
-  ucibin = module.get_bin_path('uci', required=True)
-  state = module.params['state']
-  config = module.params['config']
-  section = module.params['section']
-  type = module.params['section']
-  options = module.params['options']
-  position = module.params['position']
-  replace = module.params['replace']
-  commit = module.params['commit']
+        supports_check_mode=True,
+    )
+    ucibin = module.get_bin_path("uci", required=True)
+    state = module.params["state"]
+    config = module.params["config"]
+    section = module.params["section"]
+    type = module.params["section"]
+    options = module.params["options"]
+    position = module.params["position"]
+    replace = module.params["replace"]
+    commit = module.params["commit"]
 
-  ucibin = module.get_bin_path('uci', required=True)
-  commands = []
-  changed = False
+    ucibin = module.get_bin_path("uci", required=True)
+    commands = []
+    changed = False
 
-  match state:
-    case 'present':
-      commands.append([ucibin, 'show', config])
-      if not module.check_mode:
-        rc, out, err = module.run_command(commands[0], check_rc=True)
+    match state:
+        case "present":
+            commands.append([ucibin, "show", config])
+            if not module.check_mode:
+                rc, out, err = module.run_command(commands[0], check_rc=True)
 
-    case 'absent':
-      commands.append([ucibin, 'changes', config])
-      if not module.check_mode:
-        rc, out, err = module.run_command(commands[0], check_rc=True)
+        case "absent":
+            commands.append([ucibin, "changes", config])
+            if not module.check_mode:
+                rc, out, err = module.run_command(commands[0], check_rc=True)
 
-  module.exit_json(
-    changed=changed,
-    state=state,
-    config=config,
-    section=section,
-    type=type,
-    options=options,
-    position=position,
-    replace=replace,
-    commit=commit,
-    uci_commands=commands
-  )
+    module.exit_json(
+        changed=changed,
+        state=state,
+        config=config,
+        section=section,
+        type=type,
+        options=options,
+        position=position,
+        replace=replace,
+        commit=commit,
+        uci_commands=commands,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
