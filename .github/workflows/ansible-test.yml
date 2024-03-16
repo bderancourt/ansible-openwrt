@@ -6,7 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Perform sanity testing with ansible-test
-        runs-on: ubuntu-latest
         uses: ansible-community/ansible-test-gh-action@v1.14.1
         with:
           ansible-core-version: stable-2.16
