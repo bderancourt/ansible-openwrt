@@ -1,0 +1,5 @@
+- name: Perform sanity testing with ansible-test
+  uses: ansible-community/ansible-test-gh-action@v1.14.1
+  with:
+    ansible-core-version: stable-2.16
+    testing-type: sanity
