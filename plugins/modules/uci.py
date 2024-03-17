@@ -121,9 +121,78 @@ PRESENT = "present"
 ABSENT = "absent"
 
 
-def main():
+class UciContext:
+
+    module: AnsibleModule
+    changes_before: list = []
+    changes_after: list = []
+    commands: list = []
+
+    def __init__(self, module: AnsibleModule):
+        self.module = module
+        changes_before_cmd = [
+            module.get_bin_path("uci", required=True),
+            "changes",
+            module.params["config"],
+        ]
+        rc, out, err = module.run_command(changes_before_cmd, check_rc=True)
+        self.changes_before = out.splitlines()
+
+    @property
+    def state(self) -> str:
+        return self.module.params["state"]
+
+    @property
+    def config(self) -> str:
+        return self.module.params["config"]
+
+    @property
+    def section(self) -> str:
+        return self.module.params["section"]
+
+    @property
+    def type(self) -> str:
+        return self.module.params["type"]
+
+    @property
+    def options(self) -> dict:
+        return self.module.params["options"]
+
+    @property
+    def position(self) -> int:
+        return self.module.params["position"]
+
+    @property
+    def replace(self) -> bool:
+        return self.module.params["replace"]
+
+    @property
+    def find(self) -> dict:
+        return self.module.params["find"]
+
+    @property
+    def set_find(self) -> bool:
+        return self.module.params["set_find"]
+
+    @property
+    def commit(self) -> bool:
+        return self.module.params["commit"]
+
+    @property
+    def ucibin(self):
+        return self.module.get_bin_path("uci", required=True)
+
+    def has_changed(self) -> bool:
+        changes_after_cmd = [self.ucibin, "changes", self.config]
+        rc, out, err = self.module.run_command(changes_after_cmd, check_rc=True)
+        self.changes_after = out.splitlines()
+
+        return len(self.commands) > 0
+
+
+def create_context():
     module = AnsibleModule(
-        argument_spec=dict(
+        dict(
             state=dict(type="str", default=PRESENT, choices=[PRESENT, ABSENT]),
             config=dict(type="str", required=True),
             section=dict(type="str"),
@@ -131,7 +200,7 @@ def main():
             options=dict(type="dict"),
             position=dict(type="int"),
             replace=dict(type="bool", default=False),
-            find=dict(type="dict", aliases=['find_by', 'search']),
+            find=dict(type="dict", aliases=["find_by", "search"]),
             set_find=dict(type="bool", default=False),
             commit=dict(type="bool", default=False),
         ),
@@ -142,42 +211,39 @@ def main():
         # required_by = [],
         supports_check_mode=True,
     )
-    ucibin = module.get_bin_path("uci", required=True)
-    state = module.params["state"]
-    config = module.params["config"]
-    section = module.params["section"]
-    type = module.params["section"]
-    options = module.params["options"]
-    position = module.params["position"]
-    replace = module.params["replace"]
-    commit = module.params["commit"]
+    return UciContext(module=module)
 
-    ucibin = module.get_bin_path("uci", required=True)
-    commands = []
-    changed = False
 
-    match state:
+def run_command(ctx: UciContext, *args: str):
+    command_array = [ctx.ucibin, *args]
+    ctx.commands.append(" ".join(command_array))
+    if not ctx.module.check_mode:
+        return ctx.module.run_command(command_array, check_rc=True)
+
+
+def do_commit(ctx: UciContext):
+    if ctx.commit:
+        run_command(ctx, "commit", ctx.config)
+
+
+def main():
+    ctx = create_context()
+
+    match ctx.state:
         case "present":
-            commands.append([ucibin, "show", config])
-            if not module.check_mode:
-                rc, out, err = module.run_command(commands[0], check_rc=True)
+            run_command(ctx, "show", ctx.config)
 
         case "absent":
-            commands.append([ucibin, "changes", config])
-            if not module.check_mode:
-                rc, out, err = module.run_command(commands[0], check_rc=True)
+            run_command(ctx, "changes", ctx.config)
 
-    module.exit_json(
+    changed = ctx.has_changed()
+    do_commit(ctx)
+
+    ctx.module.exit_json(
         changed=changed,
-        state=state,
-        config=config,
-        section=section,
-        type=type,
-        options=options,
-        position=position,
-        replace=replace,
-        commit=commit,
-        uci_commands=commands,
+        changes_before=ctx.changes_before,
+        changes_after=ctx.changes_after,
+        uci_commands=ctx.commands,
     )
 
 
